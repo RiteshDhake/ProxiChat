@@ -10,6 +10,9 @@ from kivy.clock import Clock
 import socket
 import threading
 import os
+from kivy.core.text import LabelBase
+import platform
+
 
 # Import enhanced UI components
 from ui import (
@@ -20,7 +23,8 @@ from ui import (
     ErrorMessages,
     Features,
     validate_username,
-    validate_ip_address
+    validate_ip_address,
+    validate_message
 )
 
 
@@ -56,7 +60,7 @@ class EnhancedChatApp(MDApp):
         )
         
         self.screen_manager.add_widget(self.chat_interface)
-        
+        self.setup_emoji_support()
         # Show login dialog on startup
         Clock.schedule_once(
             lambda dt: self.chat_interface.show_login_dialog("User", "192.168.0.125"), 
@@ -64,7 +68,60 @@ class EnhancedChatApp(MDApp):
         )
         
         return self.screen_manager
-    
+    def setup_emoji_support(self):
+        
+        system = platform.system()
+        
+        if system == "Windows":
+            # Try to register emoji fonts on Windows
+            try:
+                # Windows 10/11 emoji font
+                LabelBase.register(
+                    name="emoji",
+                    fn_regular="C:/Windows/Fonts/seguiemj.ttf"
+                )
+                return "emoji"
+            except:
+                try:
+                    # Fallback to Segoe UI Symbol
+                    LabelBase.register(
+                        name="symbols",
+                        fn_regular="C:/Windows/Fonts/seguisym.ttf"
+                    )
+                    return "symbols"
+                except:
+                    return None
+        
+        elif system == "Darwin":  # macOS
+            try:
+                LabelBase.register(
+                    name="emoji",
+                    fn_regular="/System/Library/Fonts/Apple Color Emoji.ttc"
+                )
+                return "emoji"
+            except:
+                return None
+        
+        elif system == "Linux":
+            # Try common Linux emoji fonts
+            emoji_fonts = [
+                "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/TTF/NotoColorEmoji.ttf"
+            ]
+            
+            for font_path in emoji_fonts:
+                try:
+                    import os
+                    if os.path.exists(font_path):
+                        LabelBase.register(name="emoji", fn_regular=font_path)
+                        return "emoji"
+                except:
+                    continue
+            return None
+        
+        return None
+
     def setup_theme(self):
         """Configure modern app theme."""
         self.theme_cls.theme_style = "Dark"
@@ -226,7 +283,7 @@ class EnhancedChatApp(MDApp):
         is_valid, error_msg = validate_message(message)
         if not is_valid:
             self.chat_interface.add_enhanced_system_message(error_msg, "error")
-            return
+            return 
         
         try:
             # Send message

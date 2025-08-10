@@ -21,10 +21,8 @@ from kivymd.uix.divider import MDDivider
 from kivy.metrics import dp, sp
 from kivy.clock import Clock
 from kivy.animation import Animation
-from kivy.graphics import Color, Rectangle, RoundedRectangle, Line,Scale,Rotate
+from kivy.graphics import Color, Rectangle, RoundedRectangle, Line,Scale
 from typing import Optional, Callable, List
-from kivy.properties import NumericProperty
-from kivy.uix.image import Image
 
 import os
 import time
@@ -36,7 +34,7 @@ from .login_dialog import LoginDialogManager
 
 class ModernChatInterface(MDScreen):
     """Modern chat interface with enhanced visual design."""
-    logo_scale_value = NumericProperty(1.0)
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.username: Optional[str] = None
@@ -45,8 +43,6 @@ class ModernChatInterface(MDScreen):
         self.send_file_callback: Optional[Callable[[str], None]] = None
         self.connect_callback: Optional[Callable[[str, str], bool]] = None
         self._active_users: List[str] = []
-        self.app_logo = None # We'll create this in the app bar method
-        self.logo_scale = None # Initialize as None
         
         # Set dark theme background
         self.md_bg_color = [0.03, 0.03, 0.05, 1.0]
@@ -100,13 +96,13 @@ class ModernChatInterface(MDScreen):
             size_hint_x=0.6
         )
         
-        self.app_logo = Image(
-                source="/Users/riteshdhake/Documents/Chatting_app/chatting_code/logo.png",
-                size_hint=(None, None),
-                size=(dp(45), dp(45)),
-                allow_stretch=True,
-                keep_ratio=True
-            )
+        # Animated logo
+        self.app_logo = MDLabel(
+            text="💬",
+            font_size=sp(36),
+            size_hint_x=None,
+            width=dp(50)
+        )
         
         # Title section
         title_section = MDBoxLayout(
@@ -205,31 +201,41 @@ class ModernChatInterface(MDScreen):
         app_bar_container.add_widget(app_bar_layout)
         self.main_layout.add_widget(app_bar_container)
         
-        self.setup_logo_transform()
-        # Start the logo animation after the widget is fully built
-        Clock.schedule_once(lambda dt: self.start_logo_animation(), 0.5)
+        # Start logo pulse animation
+        self.start_logo_animation()
     
-
-    def setup_logo_transform(self):
-        """Setup for logo opacity animation."""
-        # No special setup needed for opacity animation
-        # The logo widget already has opacity property
-        pass
-
     def start_logo_animation(self):
-        """Start logo pulsing animation using opacity."""
-        if self.app_logo:
-            # Animate the opacity property of the logo widget
-            pulse = Animation(opacity=0.6, duration=1, t='in_out_sine') + \
-                    Animation(opacity=1.0, duration=1, t='in_out_sine')
-            pulse.repeat = True
-            # Start the animation on the logo widget itself
-            pulse.start(self.app_logo)
+        """Start a subtle pulsing animation for the app logo."""
+        # Ensure the logo widget exists before trying to animate it
+        if not hasattr(self, 'app_logo'):
+            print("Error: app_logo widget is not defined.")
+            return
 
-    def update_logo_transform(self, *args):
-        """No longer needed for opacity-based animation."""
-        # This method is no longer required since we're not using scale transforms
-        pass    
+        # Create and attach a Scale transform to the logo's canvas.
+        # This is the crucial step to enable scaling.
+        if not hasattr(self, 'logo_scale'):
+            with self.app_logo.canvas.before:
+                self.logo_scale = Scale(1, 1)
+            # The Scale transform needs to be centered on the widget,
+            # so we bind its origin to the logo's center.
+            self.app_logo.bind(pos=self._update_logo_transform, size=self._update_logo_transform)
+            # Call it once to set the initial position
+            self._update_logo_transform(self.app_logo)
+
+        # Create a repetitive pulsing animation
+        pulse = Animation(scale=1.1, duration=1, t='in_out_sine') + \
+                Animation(scale= 1.0, duration=1, t='in_out_sine')
+        pulse.repeat = True
+        
+        # The animation must be started on the Scale object, not the MDLabel.
+        pulse.start(self.logo_scale)
+
+    def _update_logo_transform(self, *args):
+        """Update the position of the Scale transform to center it on the logo."""
+        if hasattr(self, 'logo_scale'):
+            self.logo_scale.origin = self.app_logo.center
+
+        
     
     def create_modern_content(self):
         """Create modern content layout."""
@@ -806,9 +812,9 @@ class ModernChatInterface(MDScreen):
             self.status_label.text = "Online"
             self.status_label.text_color = [0, 1, 0, 1]
             
-            # Pulse animation (now uses opacity)
-            pulse = Animation(opacity=0.5, duration=0.3)
-            pulse += Animation(opacity=1, duration=0.3)
+            # Pulse animation
+            pulse = Animation(scale_x=1.3, scale_y=1.3, duration=0.3)
+            pulse += Animation(scale_x=1, scale_y=1, duration=0.3)
             pulse.start(self.status_indicator)
             
         else:
@@ -838,8 +844,8 @@ class ModernChatInterface(MDScreen):
             self.connection_info.text = "Ready to connect"
         
         # Animate user card
-        bounce = Animation(opacity=0.8, duration=0.2)
-        bounce += Animation(opacity=1, duration=0.2)
+        bounce = Animation(scale_x=1.05, scale_y=1.05, duration=0.2)
+        bounce += Animation(scale_x=1, scale_y=1, duration=0.2)
         bounce.start(self.user_info_card)
     
     def animate_successful_connection(self):
@@ -856,25 +862,10 @@ class ModernChatInterface(MDScreen):
             t='out_back'
         )
         slide_anim.start(self.chat_area)
-        # Get the original position of the logo
-        original_pos = self.app_logo.pos
         
-        # Wiggle animation (moves slightly left and right)
-        wiggle_anim = Animation(x=original_pos[0] - dp(5), duration=0.1)
-        wiggle_anim += Animation(x=original_pos[0] + dp(5), duration=0.1)
-        wiggle_anim += Animation(x=original_pos[0] - dp(3), duration=0.1)
-        wiggle_anim += Animation(x=original_pos[0] + dp(3), duration=0.1)
-        wiggle_anim += Animation(x=original_pos[0], duration=0.1)
-        
-        # Opacity pulse
-        pulse_anim = Animation(opacity=0.5, duration=0.2)
-        pulse_anim += Animation(opacity=1.0, duration=0.2)
-        pulse_anim += Animation(opacity=0.7, duration=0.2)
-        pulse_anim += Animation(opacity=1.0, duration=0.2)
-        
-        # Start both animations
-        wiggle_anim.start(self.app_logo)
-        pulse_anim.start(self.app_logo)
+        # Logo celebration spin
+        spin_anim = Animation(rotation=360, duration=0.8, t='out_cubic')
+        spin_anim.start(self.app_logo)
     
     def remove_welcome_placeholder(self):
         """Remove welcome placeholder with fade animation."""
@@ -917,8 +908,8 @@ class ModernChatInterface(MDScreen):
         message = self.message_input.text.strip()
         if message and self.send_message_callback:
             # Button press animation
-            press_anim = Animation(opacity=0.5, duration=0.1)
-            press_anim += Animation(opacity=1, duration=0.1)
+            press_anim = Animation(scale_x=0.9, scale_y=0.9, duration=0.1)
+            press_anim += Animation(scale_x=1, scale_y=1, duration=0.1)
             press_anim.start(self.send_button)
             
             self.send_message_callback(message)
@@ -934,36 +925,38 @@ class ModernChatInterface(MDScreen):
         """Handle file sending."""
         # Button animation
         if instance:
-            press_anim = Animation(opacity=0.5, duration=0.1)
-            press_anim += Animation(opacity=1, duration=0.1)
+            press_anim = Animation(scale_x=0.9, scale_y=0.9, duration=0.1)
+            press_anim += Animation(scale_x=1, scale_y=1, duration=0.1)
             press_anim.start(self.file_button)
         
         self.show_file_manager()
     
     def display_message(self, username: str, content: str):
-        """Display message with error handling."""
-        try:
-            is_own_message = username == self.username
-            
-            # Ensure theme_cls is not None
-            theme_cls = self.app_theme_cls if hasattr(self, 'app_theme_cls') else self.theme_cls
-            
-            message_card = MessageCard(
-                username=username,
-                content=content,
-                is_own_message=is_own_message,
-                theme_cls=self.theme_cls,
-                chat_width=getattr(self.chat_messages_layout, 'width', 400)
-            )
-            
-            container = MessageContainer(message_card, is_own_message)
-            self.chat_messages_layout.add_widget(container)
-            Clock.schedule_once(lambda dt: self.smooth_scroll_to_bottom(), 0.15)
-            
-        except Exception as e:
-            print(f"Message display error: {e}")
+        """Display message with enhanced styling."""
+        # Add user to active users
+        self.add_active_user(username)
+        
+        # Create enhanced message
+        is_own_message = username == self.username
+        
+        message_card = MessageCard(
+            username=username,
+            content=content,
+            is_own_message=is_own_message,
+            theme_cls=self.app_theme_cls,
+            chat_width=self.chat_messages_layout.width
+        )
+        
+        # Enhanced message container
+        container = MessageContainer(message_card, is_own_message)
+        
+        self.chat_messages_layout.add_widget(container)
+        
+        # Smooth scroll with delay
+        Clock.schedule_once(lambda dt: self.smooth_scroll_to_bottom(), 0.15)
     
     def add_enhanced_system_message(self, message: str, msg_type: str = "info"):
+        """Add system message with modern styling."""
         color_map = {
             "info": [0.2, 0.6, 1.0, 0.9],
             "success": [0.2, 0.8, 0.2, 0.9],
@@ -1005,11 +998,15 @@ class ModernChatInterface(MDScreen):
         
         # Entrance animation
         system_card.opacity = 0
+        system_card.scale_x = 0.8
+        system_card.scale_y = 0.8
         
         entrance_anim = Animation(
             opacity=1,
+            scale_x=1,
+            scale_y=1,
             duration=0.4,
-            t='out_cubic'
+            t='out_elastic'
         )
         entrance_anim.start(system_card)
         
@@ -1039,8 +1036,8 @@ class ModernChatInterface(MDScreen):
         
         # Count badge animation
         if count > 0:
-            bounce = Animation(opacity=0.5, duration=0.2)
-            bounce += Animation(opacity=1.0, duration=0.2)
+            bounce = Animation(scale_x=1.2, scale_y=1.2, duration=0.2)
+            bounce += Animation(scale_x=1, scale_y=1, duration=0.2)
             bounce.start(self.users_count_badge)
         
         # Add users with staggered animation

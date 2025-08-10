@@ -626,7 +626,7 @@ LARGE_PADDING = dp(30)
 # UTILITY FUNCTIONS
 # ============================================================================
 
-def get_avatar_color(username: str) -> List[float]:
+def get_avatar_color(username: str) -> list[float]:
     """Get consistent avatar color for a username."""
     if not username:
         return AvatarConfig.AVATAR_COLORS[0]
@@ -642,7 +642,7 @@ def get_message_alignment(is_own_message: bool) -> str:
     return "right" if is_own_message else "left"
 
 
-def get_status_color(status: str) -> List[float]:
+def get_status_color(status: str) -> list[float]:
     """Get color for connection status."""
     status_colors = {
         "Online": ModernColors.ONLINE_GREEN,

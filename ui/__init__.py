@@ -11,14 +11,14 @@ from .components import (
     ChatHeader,
     MessageInputCard,
     SystemMessageCard,
-    GradientCard,
-    AnimatedLabel,
-    PulsingIcon
 )
 
 from .login_dialog import (
     EnhancedLoginDialog,
-    LoginDialogManager
+    LoginDialogManager,
+    GradientCard,
+    # PulsingIcon,
+    # AnimatedLabel
 )
 
 from .sidebar import (

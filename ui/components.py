@@ -15,7 +15,7 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from typing import Optional
 import time
-
+from .constants import CHAT_AREA_WIDTH_RATIO, DEFAULT_PADDING
 
 class MessageCard(MDCard):
     """Enhanced message card with modern styling and animations."""
@@ -26,7 +26,7 @@ class MessageCard(MDCard):
         self.username = username
         self.content = content
         self.is_own_message = is_own_message
-        self.theme_cls = theme_cls
+        self.theme_cls = "Dark"
         self.chat_width = chat_width or dp(400)
         
         self.setup_card()
@@ -584,13 +584,12 @@ class MessageInputCard(MDCard):
             self.on_send_pressed(None)
     
     def on_send_pressed(self, instance):
-        """Handle send button with animation."""
         if self.send_callback:
             message = self.message_input.text.strip()
             if message:
-                # Button press animation
-                anim = Animation(scale_x=0.95, scale_y=0.95, duration=0.1)
-                anim += Animation(scale_x=1, scale_y=1, duration=0.1)
+                # Button press animation using opacity
+                anim = Animation(opacity=0.7, duration=0.1)
+                anim += Animation(opacity=1, duration=0.1)
                 anim.start(self.send_button)
                 
                 self.send_callback(message)
@@ -598,11 +597,10 @@ class MessageInputCard(MDCard):
                 self.message_input.focus = True
     
     def on_file_pressed(self, instance):
-        """Handle file button press."""
         if self.file_callback:
-            # Button press animation
-            anim = Animation(scale_x=0.95, scale_y=0.95, duration=0.1)
-            anim += Animation(scale_x=1, scale_y=1, duration=0.1)
+            # Opacity-based button press animation
+            anim = Animation(opacity=0.7, duration=0.1)
+            anim += Animation(opacity=1, duration=0.1)
             anim.start(self.file_button)
             
             self.file_callback()
@@ -641,12 +639,12 @@ class SystemMessageCard(MDCard):
         self.setup_card()
     
     def setup_card(self):
-        """Setup system message card."""
+        """FIXED: Setup system message card."""
         color_map = {
-            "info": [0.2, 0.6, 1.0, 0.8],      # Blue
-            "success": [0.2, 0.8, 0.2, 0.8],   # Green
-            "error": [1.0, 0.3, 0.3, 0.8],     # Red
-            "warning": [1.0, 0.8, 0.2, 0.8]    # Orange
+            "info": [0.2, 0.6, 1.0, 0.8],
+            "success": [0.2, 0.8, 0.2, 0.8],
+            "error": [1.0, 0.3, 0.3, 0.8],
+            "warning": [1.0, 0.8, 0.2, 0.8]
         }
         
         self.size_hint = (0.6, None)
@@ -669,15 +667,17 @@ class SystemMessageCard(MDCard):
         
         self.add_widget(msg_label)
         
-        # Entrance animation
+        
         self.opacity = 0
-        self.scale_x = 0.8
-        self.scale_y = 0.8
+        
+        
+        # Use position-based animation instead
+        original_y = self.y
+        self.y -= dp(10)  # Start slightly above
         
         anim = Animation(
             opacity=1,
-            scale_x=1,
-            scale_y=1,
+            y=original_y,
             duration=0.4,
             t='out_elastic'
         )

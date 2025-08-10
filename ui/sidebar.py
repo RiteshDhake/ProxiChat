@@ -261,8 +261,8 @@ class EnhancedSidebar(MDBoxLayout):
     def start_online_indicator_animation(self):
         """Start pulsing animation for online indicator."""
         def pulse_indicator(dt):
-            pulse = Animation(scale_x=1.3, scale_y=1.3, opacity=0.7, duration=1.0, t='in_out_sine')
-            pulse += Animation(scale_x=1.0, scale_y=1.0, opacity=1.0, duration=1.0, t='in_out_sine')
+            pulse = Animation(opacity=0.7, duration=1.0, t='in_out_sine')
+            pulse += Animation(opacity=1.0, duration=1.0, t='in_out_sine')
             pulse.start(self.online_indicator)
             Clock.schedule_once(pulse_indicator, 2.0)
         
@@ -331,9 +331,9 @@ class EnhancedSidebar(MDBoxLayout):
         
         if username != "Not Connected":
             self.user_avatar.md_bg_color = [0.2, 0.6, 1.0, 1.0]
-            # Bounce animation for avatar
-            bounce = Animation(scale_x=1.1, scale_y=1.1, duration=0.2)
-            bounce += Animation(scale_x=1.0, scale_y=1.0, duration=0.2)
+            # Bounce animation for avatar (now using opacity)
+            bounce = Animation(opacity=0.5, duration=0.2)
+            bounce += Animation(opacity=1.0, duration=0.2)
             bounce.start(self.user_avatar)
         else:
             self.user_avatar.md_bg_color = [0.2, 0.2, 0.25, 1.0]
@@ -348,9 +348,9 @@ class EnhancedSidebar(MDBoxLayout):
             self.status_text.text_color = [0, 1, 0, 1]
             self.connection_info.text = f"Connected since {time.strftime('%H:%M')}"
             
-            # Pulse animation for status dot
-            pulse = Animation(scale_x=1.5, scale_y=1.5, duration=0.3)
-            pulse += Animation(scale_x=1.0, scale_y=1.0, duration=0.3)
+            # Pulse animation for status dot (now using opacity)
+            pulse = Animation(opacity=0.5, duration=0.3)
+            pulse += Animation(opacity=1.0, duration=0.3)
             pulse.start(self.status_dot)
         else:
             self.status_dot.md_bg_color = [0.5, 0.5, 0.5, 1]
@@ -389,8 +389,8 @@ class EnhancedSidebar(MDBoxLayout):
         self.count_text.text = str(count)
         
         if count > 0:
-            bounce = Animation(scale_x=1.3, scale_y=1.3, duration=0.2)
-            bounce += Animation(scale_x=1.0, scale_y=1.0, duration=0.2)
+            bounce = Animation(opacity=0.5, duration=0.2)
+            bounce += Animation(opacity=1.0, duration=0.2)
             bounce.start(self.users_count_badge)
         
         # Add users with staggered entrance
@@ -562,8 +562,8 @@ class EnhancedSidebar(MDBoxLayout):
         for child in self.users_layout.children:
             if hasattr(child, 'username') and child.username == username:
                 # Subtle glow effect
-                glow = Animation(scale_x=1.05, scale_y=1.05, duration=0.2)
-                glow += Animation(scale_x=1.0, scale_y=1.0, duration=0.2)
+                glow = Animation(opacity=0.8, duration=0.2)
+                glow += Animation(opacity=1.0, duration=0.2)
                 glow.start(child)
                 break
     

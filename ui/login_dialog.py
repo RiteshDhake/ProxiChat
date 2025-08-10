@@ -19,6 +19,8 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Line
 from typing import Callable, Optional
+from kivy.uix.image import Image
+
 
 
 class EnhancedLoginDialog(MDFloatLayout):
@@ -29,6 +31,7 @@ class EnhancedLoginDialog(MDFloatLayout):
         self.connect_callback = connect_callback
         self.setup_dialog()
         self.animate_entrance()
+        self.opacity =0
     
     def setup_dialog(self):
         """Setup enhanced login dialog with modern styling."""
@@ -54,22 +57,24 @@ class EnhancedLoginDialog(MDFloatLayout):
             padding=dp(32),
             orientation="vertical",
             spacing=dp(24),
-            radius=[dp(20)],
+            radius=[dp(20),dp(20),dp(20),dp(20)],
             elevation=8,
+            style = "outlined",
+            theme_bg_color="Custom",
             md_bg_color=[0.1, 0.1, 0.15, 0.95]  # Semi-transparent dark
         )
         
         # Add subtle border effect
-        with login_card.canvas.after:
-            Color(0.3, 0.3, 0.4, 0.3)
-            login_card.border_line = Line(
-                rounded_rectangle=[
-                    login_card.x, login_card.y, 
-                    login_card.width, login_card.height, 
-                    dp(20)
-                ],
-                width=1
-            )
+        # with login_card.canvas.after:
+        #     Color(0.3, 0.3, 0.4, 0.3)
+        #     login_card.border_line = Line(
+        #         rounded_rectangle=[
+        #             login_card.x, login_card.y, 
+        #             login_card.width, login_card.height, 
+        #             dp(20)
+        #         ],
+        #         width=1
+        #     )
         
         login_card.bind(pos=self.update_card_border, size=self.update_card_border)
         
@@ -97,12 +102,13 @@ class EnhancedLoginDialog(MDFloatLayout):
         )
         
         # App logo/icon
-        logo_label = MDLabel(
-            text="💬",
-            font_size=sp(48),
-            halign="center",
-            size_hint_y=None,
-            height=dp(60)
+        logo_label = Image(
+            source="/Users/riteshdhake/Documents/Chatting_app/chatting_code/logo.png",
+                size_hint=(None, None),
+                size=(dp(45), dp(45)),
+                allow_stretch=True,
+                keep_ratio=True,
+                pos_hint={"center_x": 0.5, "center_y": 0.5}
         )
         
         # Main title
@@ -231,7 +237,7 @@ class EnhancedLoginDialog(MDFloatLayout):
         
         # Loading indicator (hidden initially)
         self.loading_label = MDLabel(
-            text="🔄 Connecting...",
+            text="Connecting...",
             halign="center",
             theme_text_color="Custom",
             text_color=[0.2, 0.6, 1.0, 1],
@@ -247,28 +253,28 @@ class EnhancedLoginDialog(MDFloatLayout):
         return button_layout
     
     def animate_entrance(self):
-        """Animate dialog entrance."""
-        # Start with transparent background
-        self.login_card.opacity = 0
-        self.login_card.scale_x = 0.8
-        self.login_card.scale_y = 0.8
+        """FIXED: Animate dialog entrance with modern effects."""
+        # Fix: Don't animate canvas directly
+        self.opacity = 0  # Start transparent
         
-        # Background fade in
-        bg_anim = Animation(
-            canvas={'before': {'Color': (0, 0, 0, 0.8)}},
-            duration=0.3
-        )
+        # Simple fade-in animation for the entire dialog
+        dialog_anim = Animation(opacity=1, duration=0.3)
+        dialog_anim.start(self)
         
-        # Card slide and scale in
-        card_anim = Animation(
-            opacity=1,
-            scale_x=1,
-            scale_y=1,
-            duration=0.4,
-            t='out_back'
-        )
-        
-        Clock.schedule_once(lambda dt: card_anim.start(self.login_card), 0.1)
+        # Card entrance animation - safe approach
+        if hasattr(self, 'login_card'):
+            original_y = self.login_card.y
+            self.login_card.y -= dp(50)
+            self.login_card.opacity = 0
+            
+            card_anim = Animation(
+                y=original_y,
+                opacity=1,
+                duration=0.4,
+                t='out_back'
+            )
+            card_anim.start(self.login_card)
+
     
     def update_bg(self, *args):
         """Update background rectangle."""
@@ -439,11 +445,10 @@ class EnhancedLoginDialog(MDFloatLayout):
         glow_anim.start(self.username_input)
     
     def animate_entrance(self):
-        """Animate dialog entrance with modern effects."""
-        # Background fade in
-        anim1 = Animation(canvas={'before': {'Color': (0, 0, 0, 0.8)}}, duration=0.3)
-        
-        # Start dialog off-screen
+        self.opacity = 0
+    
+    # Animate to semi-transparent background effect
+        anim1 = Animation(opacity=0.9, duration=0.3)
         Clock.schedule_once(lambda dt: anim1.start(self), 0.1)
 
 
@@ -457,42 +462,57 @@ class LoginDialogManager:
     
     def show_login(self, default_username: str = "", default_host: str = "192.168.0.125"):
         """Show enhanced login dialog."""
-        if self.dialog is None:
-            self.dialog = EnhancedLoginDialog(self.on_connect_requested)
-            self.dialog.set_default_values(default_username, default_host)
+        # FIXED: Proper parent management to prevent widget parent error
+        if self.dialog is not None:
+            # If dialog exists and has a parent, remove it first
+            if self.dialog.parent:
+                self.dialog.parent.remove_widget(self.dialog)
+            # Clear the reference to create a fresh dialog
+            self.dialog = None
         
+        # Create new dialog instance
+        self.dialog = EnhancedLoginDialog(self.on_connect_requested)
+        self.dialog.set_default_values(default_username, default_host)
+        
+        # Add to parent screen
         self.parent_screen.add_widget(self.dialog)
         
         # Focus username input after a short delay
         Clock.schedule_once(lambda dt: self.dialog.focus_username_input(), 0.5)
-    
+
+    # Also update the hide_login method to properly clear the dialog reference:
+
     def hide_login(self):
         """Hide login dialog with exit animation."""
         if self.dialog and self.dialog.parent:
-            # Exit animation
+            # Get reference to the Color instruction for background fade
+            bg_color = self.dialog.canvas.before.children[0]
+            
+            # Background fade out animation
+            bg_anim = Animation(a=0, duration=0.3)
+            
+            # Card exit animation - using opacity and position instead of scale
             exit_anim = Animation(
                 opacity=0,
-                scale_x=0.8,
-                scale_y=0.8,
+                y=self.dialog.login_card.y - dp(30),  # Slide down slightly
                 duration=0.3,
                 t='in_cubic'
             )
-            exit_anim.bind(
-                on_complete=lambda *x: self.parent_screen.remove_widget(self.dialog)
-            )
-            exit_anim.start(self.dialog.login_card)
             
-            # Background fade out
-            bg_anim = Animation(
-                canvas={'before': {'Color': (0, 0, 0, 0)}},
-                duration=0.3
-            )
-            bg_anim.start(self.dialog)
-    
+            def remove_dialog(*args):
+                if self.dialog and self.dialog.parent:
+                    self.parent_screen.remove_widget(self.dialog)
+                    # Clear dialog reference after removal
+                    self.dialog = None
+            
+            # Bind completion callback and start animations
+            exit_anim.bind(on_complete=remove_dialog)
+            exit_anim.start(self.dialog.login_card)
+            bg_anim.start(bg_color)
+
     def on_connect_requested(self, username: str, host: str):
         """Handle connection request with enhanced feedback."""
         success = self.connect_callback(username, host)
-        
         if success:
             # Success animation before hiding
             success_anim = Animation(
@@ -508,19 +528,19 @@ class LoginDialogManager:
         else:
             # Reset connecting state on failure
             self.dialog.hide_connecting_state()
-            
-            # Error shake animation
-            original_pos = self.dialog.login_card.pos
-            shake = Animation(x=original_pos[0] + dp(15), duration=0.1)
-            shake += Animation(x=original_pos[0] - dp(15), duration=0.1)
-            shake += Animation(x=original_pos[0], duration=0.1)
-            shake.start(self.dialog.login_card)
-    
-    def cleanup(self):
-        """Enhanced cleanup with animations."""
-        if self.dialog:
-            self.hide_login()
-            Clock.schedule_once(lambda dt: setattr(self, 'dialog', None), 0.5)
+            # Error shake animation - ensure we have valid position
+            if hasattr(self.dialog.login_card, 'pos') and self.dialog.login_card.pos:
+                original_pos = self.dialog.login_card.pos
+                shake = Animation(x=original_pos[0] + dp(15), duration=0.1)
+                shake += Animation(x=original_pos[0] - dp(15), duration=0.1)
+                shake += Animation(x=original_pos[0], duration=0.1)
+                shake.start(self.dialog.login_card)
+        
+        def cleanup(self):
+            """Enhanced cleanup with animations."""
+            if self.dialog:
+                self.hide_login()
+                Clock.schedule_once(lambda dt: setattr(self, 'dialog', None), 0.5)
 
 
 # Additional utility classes for enhanced styling
@@ -583,13 +603,12 @@ class AnimatedLabel(MDLabel):
                 self.text = self.current_text  # Remove cursor
         
         Clock.schedule_once(add_character, 0.1)
-
-
 class PulsingIcon(MDLabel):
     """Icon with pulsing animation effect."""
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.animation = None
         self.start_pulsing()
     
     def start_pulsing(self):
@@ -597,4 +616,13 @@ class PulsingIcon(MDLabel):
         pulse_anim = Animation(opacity=0.5, duration=1.0, t='in_out_sine')
         pulse_anim += Animation(opacity=1.0, duration=1.0, t='in_out_sine')
         pulse_anim.repeat = True
+        
+        # Store reference to animation for potential cleanup
+        self.animation = pulse_anim
         pulse_anim.start(self)
+    
+    def stop_pulsing(self):
+        """Stop pulsing animation."""
+        if self.animation:
+            self.animation.cancel(self)
+            self.opacity = 1.0  # Reset to full opacity
