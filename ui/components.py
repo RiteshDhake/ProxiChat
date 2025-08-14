@@ -21,12 +21,12 @@ class MessageCard(MDCard):
     """Enhanced message card with modern styling and animations."""
     
     def __init__(self, username: str, content: str, is_own_message: bool = False, 
-                 theme_cls=None, chat_width: Optional[float] = None, **kwargs):
+                  chat_width: Optional[float] = None, **kwargs):
         super().__init__(**kwargs)
         self.username = username
         self.content = content
         self.is_own_message = is_own_message
-        self.theme_cls = "Dark"
+
         self.chat_width = chat_width or dp(400)
         
         self.setup_card()
@@ -39,6 +39,7 @@ class MessageCard(MDCard):
         self.padding = [dp(16), dp(12), dp(16), dp(12)]
         self.radius = [dp(15), dp(15), dp(15), dp(5)] if not self.is_own_message else [dp(15), dp(15), dp(5), dp(15)]
         self.elevation = 2
+        self.theme_bg_color = "Custom"
         
         # Enhanced color scheme
         if self.is_own_message:
@@ -63,6 +64,7 @@ class MessageCard(MDCard):
                 font_size=sp(13),
                 markup=True,
                 size_hint_x=None,
+                valign = "top",
                 width=dp(100),
                 theme_text_color="Custom",
                 text_color=[1, 1, 1, 0.9]
@@ -72,6 +74,7 @@ class MessageCard(MDCard):
                 text=f"[color=#888888]{time.strftime('%H:%M')}[/color]",
                 font_size=sp(11),
                 markup=True,
+                valign = "top",
                 halign="right",
                 theme_text_color="Custom",
                 text_color=[0.5, 0.5, 0.5, 1]
@@ -92,14 +95,15 @@ class MessageCard(MDCard):
             text_color = [0.9, 0.9, 0.9, 1]  # Light gray text for others
         
         msg_label = MDLabel(
-            text=msg_text,
-            size_hint_y=None,
-            text_size=(text_width, None),
-            valign="top",
-            theme_text_color="Custom",
-            text_color=text_color,
-            font_size=sp(14),
-            line_height=1.2
+           text=msg_text,
+    size_hint_y=None,
+    text_size=(text_width, None),
+    valign="top",  # start at top
+    halign="left",
+    theme_text_color="Custom",
+    text_color=text_color,
+    font_size=sp(14),
+    line_height=1.2
         )
         
         msg_label.bind(texture_size=lambda instance, size: setattr(instance, 'height', size[1]))
@@ -109,9 +113,10 @@ class MessageCard(MDCard):
         if self.is_own_message:
             timestamp_label = MDLabel(
                 text=f"[color=#CCCCCC]{time.strftime('%H:%M')}[/color]",
-                font_size=sp(11),
+                font_size=sp(5),
                 markup=True,
                 halign="right",
+                valign = "bottom",
                 size_hint_y=None,
                 height=dp(16),
                 theme_text_color="Custom",
@@ -120,6 +125,7 @@ class MessageCard(MDCard):
             message_layout.add_widget(timestamp_label)
         
         self.add_widget(message_layout)
+        message_layout.bind(minimum_height=lambda instance, value: setattr(self, 'height', value + dp(24)))  
     
     def animate_entrance(self):
         """Add entrance animation to message cards."""

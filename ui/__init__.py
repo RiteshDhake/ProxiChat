@@ -16,9 +16,9 @@ from .components import (
 from .login_dialog import (
     EnhancedLoginDialog,
     LoginDialogManager,
-    GradientCard,
-    # PulsingIcon,
-    # AnimatedLabel
+    # GradientCard,
+    PulsingIcon,
+    AnimatedLabel
 )
 
 from .sidebar import (

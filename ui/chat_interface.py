@@ -1,10 +1,14 @@
 """
-Complete enhanced chat interface with all the modern styling improvements.
-This file replaces your existing chat_interface.py
+Updated version of chat_interface.py with proper EnhancedSidebar integration.
+Key changes:
+1. Remove duplicate sidebar creation methods
+2. Properly use EnhancedSidebar from sidebar.py
+3. Connect all sidebar methods correctly
+4. Fix user management functionality
 """
 
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.button import MDButton, MDButtonIcon, MDButtonText
+from kivymd.uix.button import MDButton, MDButtonIcon, MDButtonText,MDIconButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.scrollview import MDScrollView
 from kivymd.uix.textfield import (
@@ -32,11 +36,13 @@ import time
 # Import your enhanced components
 from .components import MessageCard, MessageContainer, ChatHeader, MessageInputCard
 from .login_dialog import LoginDialogManager
+from .sidebar import EnhancedSidebar
 
 
 class ModernChatInterface(MDScreen):
     """Modern chat interface with enhanced visual design."""
     logo_scale_value = NumericProperty(1.0)
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.username: Optional[str] = None
@@ -45,8 +51,8 @@ class ModernChatInterface(MDScreen):
         self.send_file_callback: Optional[Callable[[str], None]] = None
         self.connect_callback: Optional[Callable[[str, str], bool]] = None
         self._active_users: List[str] = []
-        self.app_logo = None # We'll create this in the app bar method
-        self.logo_scale = None # Initialize as None
+        self.app_logo = None
+        self.logo_scale = None
         
         # Set dark theme background
         self.md_bg_color = [0.03, 0.03, 0.05, 1.0]
@@ -140,7 +146,6 @@ class ModernChatInterface(MDScreen):
             orientation="horizontal",
             spacing=dp(16),
             size_hint_x=0.4,
-            # halign="right"
         )
         
         # Connection status
@@ -178,11 +183,10 @@ class ModernChatInterface(MDScreen):
             width=dp(80)
         )
         
-        users_icon = MDLabel(
-            text="👥",
-            font_size=sp(16),
+        users_icon = MDIconButton(
+            icon = "account-group",
             size_hint_x=None,
-            width=dp(20)
+            width=dp(20),
         )
         
         self.user_count_label = MDLabel(
@@ -240,8 +244,8 @@ class ModernChatInterface(MDScreen):
         )
         self.main_layout.add_widget(content_container)
         
-        # Enhanced sidebar
-        self.sidebar = self.create_modern_sidebar()
+        # Use Enhanced sidebar from sidebar.py
+        self.sidebar = EnhancedSidebar()
         content_container.add_widget(self.sidebar)
         
         # Separator line
@@ -255,227 +259,6 @@ class ModernChatInterface(MDScreen):
         # Enhanced chat area
         self.chat_area = self.create_modern_chat_area()
         content_container.add_widget(self.chat_area)
-    
-    def create_modern_sidebar(self) -> MDBoxLayout:
-        """Create modern sidebar with enhanced styling."""
-        sidebar = MDBoxLayout(
-            orientation="vertical",
-            size_hint_x=0.32,
-            spacing=dp(20),
-            padding=[dp(20), dp(20), dp(16), dp(20)]
-        )
-        
-        # Gradient background for sidebar
-        with sidebar.canvas.before:
-            Color(0.06, 0.06, 0.09, 1)
-            sidebar.bg_rect = Rectangle(pos=sidebar.pos, size=sidebar.size)
-        
-        sidebar.bind(pos=self.update_sidebar_bg, size=self.update_sidebar_bg)
-        
-        # Enhanced user info section
-        self.user_info_card = self.create_user_info_section()
-        sidebar.add_widget(self.user_info_card)
-        
-        # Enhanced online users section
-        self.online_users_card = self.create_online_users_section()
-        sidebar.add_widget(self.online_users_card)
-        
-        return sidebar
-    
-    def create_user_info_section(self) -> MDCard:
-        """Create enhanced user info section."""
-        user_card = MDCard(
-            size_hint_y=None,
-            height=dp(140),
-            padding=dp(24),
-            orientation="vertical",
-            radius=[dp(16)],
-            elevation=4,
-            md_bg_color=[0.1, 0.1, 0.15, 0.95],
-            spacing=dp(12)
-        )
-        
-        # User avatar and info
-        user_header = MDBoxLayout(
-            orientation="horizontal",
-            spacing=dp(16),
-            size_hint_y=None,
-            height=dp(50)
-        )
-        
-        # Avatar placeholder
-        self.user_avatar = MDCard(
-            size_hint=(None, None),
-            size=(dp(50), dp(50)),
-            radius=[dp(25)],
-            md_bg_color=[0.2, 0.2, 0.25, 1.0]
-        )
-        
-        self.avatar_label = MDLabel(
-            text="?",
-            halign="center",
-            valign="middle",
-            font_size=sp(24),
-            bold=True,
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1]
-        )
-        self.user_avatar.add_widget(self.avatar_label)
-        
-        # User details
-        user_details = MDBoxLayout(
-            orientation="vertical",
-            spacing=dp(4)
-        )
-        
-        self.username_label = MDLabel(
-            text="Not Connected",
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1],
-            font_size=sp(18),
-            bold=True
-        )
-        
-        # Status with animated indicator
-        status_container = MDBoxLayout(
-            orientation="horizontal",
-            spacing=dp(8),
-            size_hint_y=None,
-            height=dp(20)
-        )
-        
-        self.status_dot = MDCard(
-            size_hint=(None, None),
-            size=(dp(8), dp(8)),
-            radius=[dp(4)],
-            md_bg_color=[0.5, 0.5, 0.5, 1]
-        )
-        
-        self.status_text = MDLabel(
-            text="Offline",
-            theme_text_color="Custom",
-            text_color=[0.7, 0.7, 0.7, 1],
-            font_size=sp(14)
-        )
-        
-        status_container.add_widget(self.status_dot)
-        status_container.add_widget(self.status_text)
-        
-        user_details.add_widget(self.username_label)
-        user_details.add_widget(status_container)
-        
-        user_header.add_widget(self.user_avatar)
-        user_header.add_widget(user_details)
-        
-        user_card.add_widget(user_header)
-        
-        # Divider
-        divider = MDDivider(
-            color=[0.3, 0.3, 0.35, 0.5],
-            size_hint_y=None,
-            height=dp(1)
-        )
-        user_card.add_widget(divider)
-        
-        # Connection time or additional info
-        self.connection_info = MDLabel(
-            text="Ready to connect",
-            theme_text_color="Custom",
-            text_color=[0.5, 0.5, 0.6, 1],
-            font_size=sp(12),
-            halign="center"
-        )
-        user_card.add_widget(self.connection_info)
-        
-        return user_card
-    
-    def create_online_users_section(self) -> MDCard:
-        """Create enhanced online users section."""
-        users_card = MDCard(
-            padding=dp(20),
-            orientation="vertical",
-            radius=[dp(16)],
-            elevation=4,
-            md_bg_color=[0.1, 0.1, 0.15, 0.95],
-            spacing=dp(16)
-        )
-        
-        # Header with count
-        header_layout = MDBoxLayout(
-            orientation="horizontal",
-            size_hint_y=None,
-            height=dp(32),
-            spacing=dp(12)
-        )
-        
-        online_icon = MDLabel(
-            text="🌐",
-            font_size=sp(20),
-            size_hint_x=None,
-            width=dp(24)
-        )
-        
-        users_title = MDLabel(
-            text="Online Users",
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1],
-            font_size=sp(18),
-            bold=True
-        )
-        
-        self.users_count_badge = MDCard(
-            size_hint=(None, None),
-            size=(dp(28), dp(20)),
-            radius=[dp(10)],
-            md_bg_color=[0.2, 0.6, 1.0, 1.0]
-        )
-        
-        self.count_text = MDLabel(
-            text="0",
-            halign="center",
-            valign="middle",
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1],
-            font_size=sp(12),
-            bold=True
-        )
-        self.users_count_badge.add_widget(self.count_text)
-        
-        header_layout.add_widget(online_icon)
-        header_layout.add_widget(users_title)
-        header_layout.add_widget(MDLabel())  # Spacer
-        header_layout.add_widget(self.users_count_badge)
-        
-        users_card.add_widget(header_layout)
-        
-        # Divider
-        divider = MDDivider(
-            color=[0.3, 0.3, 0.35, 0.5],
-            size_hint_y=None,
-            height=dp(1)
-        )
-        users_card.add_widget(divider)
-        
-        # Users list with enhanced scroll
-        self.users_scroll = MDScrollView(
-            do_scroll_x=False,
-            scroll_type=['bars'],
-            bar_width=dp(4),
-            bar_color=[0.3, 0.3, 0.4, 0.6]
-        )
-        
-        self.users_layout = MDBoxLayout(
-            orientation="vertical",
-            size_hint_y=None,
-            adaptive_height=True,
-            spacing=dp(8),
-            padding=[dp(8), dp(8), dp(8), dp(8)]
-        )
-        
-        self.users_scroll.add_widget(self.users_layout)
-        users_card.add_widget(self.users_scroll)
-        
-        return users_card
     
     def create_modern_chat_area(self) -> MDBoxLayout:
         """Create modern chat area with improved styling."""
@@ -526,8 +309,9 @@ class ModernChatInterface(MDScreen):
         )
         
         # Chat icon and title
-        chat_icon = MDLabel(
-            text="💬",
+        chat_icon = MDIconButton(
+            icon = "chat",
+            style = "tonal",
             font_size=sp(28),
             size_hint_x=None,
             width=dp(40)
@@ -546,15 +330,7 @@ class ModernChatInterface(MDScreen):
             bold=True
         )
         
-        chat_subtitle = MDLabel(
-            text="Share your thoughts with everyone online",
-            theme_text_color="Custom",
-            text_color=[0.6, 0.6, 0.7, 1],
-            font_size=sp(13)
-        )
-        
         title_section.add_widget(chat_title)
-        title_section.add_widget(chat_subtitle)
         
         # Right side info
         info_section = MDBoxLayout(
@@ -583,6 +359,8 @@ class ModernChatInterface(MDScreen):
         info_section.add_widget(active_indicator)
         info_section.add_widget(active_label)
         
+        chat_icon.disabled = True
+        chat_icon.disabled_color="white"
         header_layout.add_widget(chat_icon)
         header_layout.add_widget(title_section)
         header_layout.add_widget(MDLabel())  # Spacer
@@ -694,24 +472,28 @@ class ModernChatInterface(MDScreen):
         
         # Enhanced text input
         self.message_input = MDTextField(
-            hint_text="Type your message here...",
-            mode="filled",
-            size_hint_x=0.75,
-            multiline=False,
-            fill_color_normal=[0.12, 0.12, 0.16, 1],
-            fill_color_focus=[0.15, 0.15, 0.19, 1],
-            line_color_normal=[0.2, 0.2, 0.25, 1],
+            MDTextFieldHintText(
+                text="Enter Your Message Here",
+                text_color_normal=[0.6, 0.6, 0.6, 1],
+                text_color_focus=[0.8, 0.8, 0.8, 1],
+            ),
+            mode="outlined",
+            line_color_normal=[0.3, 0.3, 0.4, 1],
             line_color_focus=[0.2, 0.6, 1.0, 1],
             text_color_normal=[1, 1, 1, 1],
             text_color_focus=[1, 1, 1, 1],
-            # hint_text_color_normal=[0.5, 0.5, 0.6, 1],
-            # hint_text_color_focus=[0.6, 0.6, 0.7, 1],
-            cursor_color=[0.2, 0.6, 1.0, 1],
-            font_size=sp(16)
+            fill_color_normal=[0.08, 0.08, 0.1, 1],
+            fill_color_focus=[0.1, 0.1, 0.12, 1]
         )
         
         # Enhanced buttons with better styling
         self.file_button = MDButton(
+            MDButtonIcon(
+                icon="paperclip",
+                theme_icon_color="Custom",
+                icon_color=[1, 1, 1, 1]
+            ),
+            
             size_hint_x=None,
             width=dp(60),
             height=dp(50),
@@ -720,38 +502,29 @@ class ModernChatInterface(MDScreen):
             on_release=self.on_send_file
         )
         
-        file_icon = MDLabel(
-            text="📎",
-            font_size=sp(20),
-            halign="center",
-            valign="middle"
-        )
-        self.file_button.add_widget(file_icon)
+        
         
         self.send_button = MDButton(
+            MDButtonIcon(
+                icon="send",
+                theme_icon_color="Custom",
+                icon_color=[1, 1, 1, 1],
+                pos_hint={"center_x": 0.5, "center_y": 0.5},
+            ),
             size_hint_x=None,
             width=dp(80),
             height=dp(50),
             theme_bg_color="Custom",
             md_bg_color=[0.2, 0.6, 1.0, 1],
+
             radius=[dp(25)],
             on_release=self.on_send_message_btn
         )
         
-        send_icon = MDLabel(
-            text="➤",
-            font_size=sp(18),
-            halign="center",
-            valign="middle",
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1],
-            bold=True
-        )
-        self.send_button.add_widget(send_icon)
         
         input_layout.add_widget(self.message_input)
-        input_layout.add_widget(self.file_button)
         input_layout.add_widget(self.send_button)
+        input_layout.add_widget(self.file_button)
         
         input_container.add_widget(input_layout)
         parent_layout.add_widget(input_container)
@@ -761,12 +534,6 @@ class ModernChatInterface(MDScreen):
         
         # Bind Enter key
         self.message_input.bind(on_text_validate=self.on_enter_pressed)
-    
-    def update_sidebar_bg(self, *args):
-        """Update sidebar background."""
-        if hasattr(self.sidebar, 'bg_rect'):
-            self.sidebar.bg_rect.pos = self.sidebar.pos
-            self.sidebar.bg_rect.size = self.sidebar.size
     
     # Enhanced callback methods
     def set_callbacks(self, send_message_callback: Callable[[str], None],
@@ -788,13 +555,14 @@ class ModernChatInterface(MDScreen):
             if success:
                 self.username = username
                 self.update_connection_status(True)
-                self.update_user_info(username, "Online")
+                # Use sidebar's update_user_info method
+                self.sidebar.update_user_info(username, "Online")
                 self.set_input_enabled(True)
                 self.remove_welcome_placeholder()
-                self.add_enhanced_system_message("🎉 Connected to server successfully!", "success")
+                self.add_enhanced_system_message("Connected to server successfully!", "success")
                 self.animate_successful_connection()
             else:
-                self.add_enhanced_system_message("❌ Failed to connect to server", "error")
+                self.add_enhanced_system_message(" Failed to connect to server", "error")
             return success
         return False
     
@@ -815,32 +583,6 @@ class ModernChatInterface(MDScreen):
             self.status_indicator.md_bg_color = [0.5, 0.5, 0.5, 1]
             self.status_label.text = "Offline"
             self.status_label.text_color = [0.6, 0.6, 0.6, 1]
-    
-    def update_user_info(self, username: str, status: str):
-        """Update user info with animations."""
-        # Update avatar
-        self.avatar_label.text = username[0].upper() if username else "?"
-        if username != "Not Connected":
-            self.user_avatar.md_bg_color = [0.2, 0.6, 1.0, 1.0]
-        else:
-            self.user_avatar.md_bg_color = [0.2, 0.2, 0.25, 1.0]
-        
-        # Update labels
-        self.username_label.text = username
-        self.status_text.text = status
-        
-        # Update status dot
-        if status == "Online":
-            self.status_dot.md_bg_color = [0, 1, 0, 1]
-            self.connection_info.text = f"Connected since {time.strftime('%H:%M')}"
-        else:
-            self.status_dot.md_bg_color = [0.5, 0.5, 0.5, 1]
-            self.connection_info.text = "Ready to connect"
-        
-        # Animate user card
-        bounce = Animation(opacity=0.8, duration=0.2)
-        bounce += Animation(opacity=1, duration=0.2)
-        bounce.start(self.user_info_card)
     
     def animate_successful_connection(self):
         """Animate successful connection."""
@@ -952,13 +694,16 @@ class ModernChatInterface(MDScreen):
                 username=username,
                 content=content,
                 is_own_message=is_own_message,
-                theme_cls=self.theme_cls,
                 chat_width=getattr(self.chat_messages_layout, 'width', 400)
             )
             
             container = MessageContainer(message_card, is_own_message)
             self.chat_messages_layout.add_widget(container)
             Clock.schedule_once(lambda dt: self.smooth_scroll_to_bottom(), 0.15)
+            
+            # Animate user activity in sidebar
+            if username != self.username:
+                self.sidebar.animate_user_activity(username)
             
         except Exception as e:
             print(f"Message display error: {e}")
@@ -977,6 +722,7 @@ class ModernChatInterface(MDScreen):
             pos_hint={"center_x": 0.5},
             padding=[dp(20), dp(12), dp(20), dp(12)],
             radius=[dp(22)],
+            theme_bg_color="Custom",
             md_bg_color=color_map.get(msg_type, [0.5, 0.5, 0.5, 0.9]),
             elevation=2
         )
@@ -1016,106 +762,28 @@ class ModernChatInterface(MDScreen):
         Clock.schedule_once(lambda dt: self.smooth_scroll_to_bottom(), 0.1)
     
     def add_active_user(self, username: str):
-        """Add user to active list with animation."""
+        """Add user to active list - USES SIDEBAR METHOD."""
         if username not in self._active_users:
             self._active_users.append(username)
-            self.update_users_display()
+            self.sidebar.add_active_user(username)
+            self.update_app_bar_user_count()
     
     def remove_active_user(self, username: str):
-        """Remove user from active list."""
+        """Remove user from active list - USES SIDEBAR METHOD."""
         if username in self._active_users:
             self._active_users.remove(username)
-            self.update_users_display()
+            self.sidebar.remove_active_user(username)
+            self.update_app_bar_user_count()
     
-    def update_users_display(self):
-        """Update users display with animations."""
-        # Clear existing users
-        self.users_layout.clear_widgets()
-        
-        # Update count with animation
+    def update_app_bar_user_count(self):
+        """Update the user count in the app bar."""
         count = len(self._active_users)
-        self.count_text.text = str(count)
         self.user_count_label.text = str(count)
         
-        # Count badge animation
         if count > 0:
-            bounce = Animation(opacity=0.5, duration=0.2)
-            bounce += Animation(opacity=1.0, duration=0.2)
-            bounce.start(self.users_count_badge)
-        
-        # Add users with staggered animation
-        for i, user in enumerate(self._active_users):
-            user_item = self.create_enhanced_user_item(user)
-            self.users_layout.add_widget(user_item)
-            
-            # Staggered entrance animation
-            user_item.opacity = 0
-            user_item.x = user_item.x - dp(30)
-            
-            entrance_anim = Animation(
-                opacity=1,
-                x=user_item.x + dp(30),
-                duration=0.3,
-                delay=i * 0.1,
-                t='out_cubic'
-            )
-            entrance_anim.start(user_item)
-    
-    def create_enhanced_user_item(self, username: str) -> MDBoxLayout:
-        """Create enhanced user item with modern styling."""
-        user_container = MDBoxLayout(
-            orientation="horizontal",
-            size_hint_y=None,
-            height=dp(45),
-            spacing=dp(12),
-            padding=[dp(12), dp(6), dp(12), dp(6)]
-        )
-        
-        # User avatar
-        avatar = MDCard(
-            size_hint=(None, None),
-            size=(dp(32), dp(32)),
-            radius=[dp(16)],
-            md_bg_color=[0.3, 0.3, 0.4, 1.0]
-        )
-        
-        avatar_text = MDLabel(
-            text=username[0].upper(),
-            halign="center",
-            valign="middle",
-            font_size=sp(14),
-            bold=True,
-            theme_text_color="Custom",
-            text_color=[1, 1, 1, 1]
-        )
-        avatar.add_widget(avatar_text)
-        
-        # Username
-        user_label = MDLabel(
-            text=username,
-            theme_text_color="Custom",
-            text_color=[0.9, 0.9, 0.9, 1],
-            font_size=sp(15)
-        )
-        
-        # Online indicator
-        online_dot = MDCard(
-            size_hint=(None, None),
-            size=(dp(8), dp(8)),
-            radius=[dp(4)],
-            md_bg_color=[0, 1, 0, 1]
-        )
-        
-        # Spacer layout
-        spacer_layout = MDBoxLayout()
-        spacer_layout.add_widget(MDLabel())
-        spacer_layout.add_widget(online_dot)
-        
-        user_container.add_widget(avatar)
-        user_container.add_widget(user_label)
-        user_container.add_widget(spacer_layout)
-        
-        return user_container
+            self.user_count_label.text_color = [0, 1, 0, 1]  # Green when users online
+        else:
+            self.user_count_label.text_color = [0.6, 0.6, 0.6, 1]  # Gray when no users
     
     def smooth_scroll_to_bottom(self):
         """Smooth animated scroll to bottom."""
@@ -1148,9 +816,10 @@ class ModernChatInterface(MDScreen):
         """Enhanced disconnect cleanup."""
         self.set_input_enabled(False)
         self.update_connection_status(False)
-        self.update_user_info("Not Connected", "Offline")
+        # Use sidebar method to reset user info
+        self.sidebar.reset_sidebar()
         self._active_users.clear()
-        self.update_users_display()
+        self.update_app_bar_user_count()
         self.username = None
         self.add_enhanced_system_message("🔌 Disconnected from server", "warning")
     
@@ -1159,14 +828,41 @@ class ModernChatInterface(MDScreen):
         self.add_enhanced_system_message(f"📥 File received: {filename}", "success")
     
     def user_joined(self, username: str):
-        """Handle user joined with animation."""
-        self.add_enhanced_system_message(f"👋 {username} joined the chat", "info")
-        self.add_active_user(username)
+        """Handle user joined with animation - USES SIDEBAR METHOD."""
+        print(f"DEBUG: User joined called with username: {username}")  # Debug print
+        self.add_enhanced_system_message(f" {username} joined the chat", "info")
+        self.add_active_user(username)  # This calls sidebar.add_active_user()
+        print(f"DEBUG: Active users after join: {self._active_users}")  # Debug print
     
     def user_left(self, username: str):
-        """Handle user left with animation."""
-        self.add_enhanced_system_message(f"👋 {username} left the chat", "warning")
-        self.remove_active_user(username)
+        """Handle user left with animation - USES SIDEBAR METHOD."""
+        print(f"DEBUG: User left called with username: {username}")  # Debug print
+        self.add_enhanced_system_message(f" {username} left the chat", "warning")
+        self.remove_active_user(username)  # This calls sidebar.remove_active_user()
+        print(f"DEBUG: Active users after leave: {self._active_users}")  # Debug print
+    
+    def update_user_list(self, users: List[str]):
+        """Update the entire user list - USES SIDEBAR METHOD."""
+        print(f"DEBUG: Updating user list with: {users}")  # Debug print
+        self._active_users = users.copy()
+        
+        # Clear sidebar and repopulate
+        self.sidebar.clear_users_list()
+        for user in users:
+            self.sidebar.add_active_user(user)
+        
+        self.update_app_bar_user_count()
+    
+    def set_active_users(self, users: List[str]):
+        """Set the active users list - USES SIDEBAR METHOD."""
+        print(f"DEBUG: Setting active users to: {users}")  # Debug print
+        self._active_users = users.copy()
+        
+        # Update sidebar's internal list and display
+        self.sidebar.active_users = users.copy()
+        self.sidebar.update_users_display()
+        
+        self.update_app_bar_user_count()
     
     # Utility methods
     def get_current_username(self) -> Optional[str]:
@@ -1186,7 +882,7 @@ class ModernChatInterface(MDScreen):
         for child in self.chat_messages_layout.children[:]:
             fade_anim = Animation(opacity=0, duration=0.3)
             fade_anim.bind(
-                on_complete=lambda anim, widget=child: self.chat_messages_layout.remove_widget(widget)
+                on_complete=lambda fade_anim, widget=child: self.chat_messages_layout.remove_widget(widget)
             )
             fade_anim.start(child)
     
@@ -1194,6 +890,36 @@ class ModernChatInterface(MDScreen):
         """Focus message input."""
         if hasattr(self, 'message_input'):
             self.message_input.focus = True
+    
+    # New methods to properly integrate with EnhancedSidebar
+    def update_sidebar_user_info(self, username: str, status: str = "Online"):
+        """Update sidebar user information."""
+        self.sidebar.update_user_info(username, status)
+    
+    def get_sidebar_user_count(self) -> int:
+        """Get user count from sidebar."""
+        return self.sidebar.get_user_count()
+    
+    def get_sidebar_users(self) -> List[str]:
+        """Get users list from sidebar."""
+        return self.sidebar.get_active_users()
+    
+    def animate_sidebar_user_activity(self, username: str):
+        """Animate user activity in sidebar."""
+        self.sidebar.animate_user_activity(username)
+    
+    def set_sidebar_user_offline(self):
+        """Set current user as offline in sidebar."""
+        if self.username:
+            self.sidebar.set_user_offline()
+    
+    def set_sidebar_user_online(self, username: str):
+        """Set current user as online in sidebar."""
+        self.sidebar.set_user_online(username)
+    
+    def update_sidebar_connection_time(self):
+        """Update connection time in sidebar."""
+        self.sidebar.update_connection_time()
 
 
 # Color scheme constants for consistent theming
@@ -1227,37 +953,93 @@ class ModernTheme:
 
 # Usage example and integration guide
 """
-INTEGRATION GUIDE:
+ENHANCED INTEGRATION GUIDE:
 
-1. Replace your existing chat_interface.py with this enhanced version
-2. Update your main app file to use ModernChatInterface instead of ChatInterface
-3. The enhanced components provide:
-   - Modern dark theme with consistent colors
-   - Smooth animations and transitions
-   - Better visual hierarchy and spacing
-   - Enhanced user feedback and status indicators
-   - Improved typography and iconography
+KEY CHANGES MADE:
+================
 
-4. Key improvements:
-   - Glassmorphism effects on cards and dialogs
-   - Animated entrance/exit effects
-   - Better color scheme with proper contrast
-   - Enhanced status indicators
-   - Smooth scrolling and transitions
-   - Modern button designs with hover effects
-   - Professional spacing and padding
-   - Improved user list with avatars and status dots
+1. REMOVED DUPLICATE METHODS:
+   - Removed create_modern_sidebar() method
+   - Removed create_user_info_section() method  
+   - Removed create_online_users_section() method
+   - Removed update_users_display() method
+   - Removed create_enhanced_user_item() method
+   - All user management now handled by EnhancedSidebar
 
-5. To use in your main app:
+2. PROPER SIDEBAR INTEGRATION:
+   - Direct instantiation: self.sidebar = EnhancedSidebar()
+   - All user operations route through sidebar methods
+   - Sidebar maintains its own user list and display
+
+3. FIXED USER MANAGEMENT:
+   - add_active_user() -> calls self.sidebar.add_active_user()
+   - remove_active_user() -> calls self.sidebar.remove_active_user()
+   - user_joined() -> calls add_active_user() which routes to sidebar
+   - user_left() -> calls remove_active_user() which routes to sidebar
+   - set_active_users() -> updates both local list and sidebar
+
+4. NEW UTILITY METHODS:
+   - update_sidebar_user_info()
+   - get_sidebar_user_count()
+   - get_sidebar_users()
+   - animate_sidebar_user_activity()
+   - set_sidebar_user_offline()
+   - set_sidebar_user_online()
+   - update_sidebar_connection_time()
+
+5. ENHANCED FEATURES:
+   - App bar user count syncs with sidebar
+   - Connection status updates both app bar and sidebar
+   - User activity animations work through sidebar
+   - Proper cleanup on disconnect
+
+HOW TO USE:
+===========
+
+1. Replace your chat_interface.py with this enhanced version
+2. Make sure sidebar.py is in the same directory
+3. Your server event handlers should call:
+
    ```python
-   from ui.chat_interface import ModernChatInterface
+   # When user joins
+   chat_interface.user_joined(username)
    
-   # In your app's build method:
-   self.chat_screen = ModernChatInterface()
-   self.chat_screen.set_callbacks(
-       send_message_callback=self.send_message,
-       send_file_callback=self.send_file,
-       connect_callback=self.connect_to_server
-   )
+   # When user leaves  
+   chat_interface.user_left(username)
+   
+   # To set complete user list
+   chat_interface.set_active_users(user_list)
+   
+   # To update user info
+   chat_interface.update_sidebar_user_info(username, "Online")
    ```
+
+4. The sidebar will automatically handle:
+   - User list animations
+   - Count updates
+   - Empty state displays
+   - User activity animations
+   - Connection status displays
+
+DEBUGGING:
+==========
+
+The code includes debug prints. Check console output to verify:
+- user_joined() is called with correct username
+- user_left() is called with correct username  
+- Active users list is updated correctly
+- Sidebar methods are being called
+
+If users still don't appear, ensure your server code calls these methods
+when handling client connections/disconnections.
+
+BENEFITS:
+=========
+
+- Clean separation of concerns
+- No code duplication
+- Proper encapsulation
+- Enhanced animations and visual feedback
+- Consistent state management
+- Easy to maintain and extend
 """

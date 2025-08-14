@@ -120,7 +120,8 @@ class EnhancedSidebar(MDBoxLayout):
             size_hint=(None, None),
             size=(dp(8), dp(8)),
             radius=[dp(4)],
-            md_bg_color=[0.5, 0.5, 0.5, 1]
+            # theme_md_bg_color="Custom",
+            # md_bg_color=[0.5, 0.5, 0.5, 1]
         )
         
         self.status_text = MDLabel(
@@ -401,23 +402,22 @@ class EnhancedSidebar(MDBoxLayout):
             Clock.schedule_once(lambda dt: self.add_empty_state_placeholder(), 0.4)
     
     def _add_users_with_animation(self):
-        """Add users with staggered entrance animation."""
+            
         for i, user in enumerate(self.active_users):
-            user_item = self.create_enhanced_user_item(user)
-            self.users_layout.add_widget(user_item)
-            
-            # Staggered entrance animation
-            user_item.opacity = 0
-            user_item.x = user_item.x - dp(40)
-            
-            entrance_anim = Animation(
-                opacity=1,
-                x=user_item.x + dp(40),
-                duration=0.4,
-                delay=i * 0.1,
-                t='out_cubic'
-            )
-            entrance_anim.start(user_item)
+                user_item = self.create_enhanced_user_item(user)
+                self.users_layout.add_widget(user_item)
+                
+                # Set the initial state before the animation
+                user_item.opacity = 0
+                
+                # Start the fade-in animation
+                entrance_anim = Animation(
+                    opacity=1,
+                    duration=0.4,
+                    # delay=i * 0.1,  # Staggered delay for each user
+                    t='out_cubic'
+                )
+                entrance_anim.start(user_item)
     
     def create_enhanced_user_item(self, username: str) -> MDBoxLayout:
         """Create modern user item with enhanced styling."""
@@ -450,7 +450,7 @@ class EnhancedSidebar(MDBoxLayout):
             text=username[0].upper(),
             halign="center",
             valign="middle",
-            font_size=sp(14),
+            font_size=sp(6),
             bold=True,
             theme_text_color="Custom",
             text_color=[1, 1, 1, 1]
@@ -561,10 +561,16 @@ class EnhancedSidebar(MDBoxLayout):
         # Find the user item and animate it
         for child in self.users_layout.children:
             if hasattr(child, 'username') and child.username == username:
-                # Subtle glow effect
-                glow = Animation(opacity=0.8, duration=0.2)
-                glow += Animation(opacity=1.0, duration=0.2)
-                glow.start(child)
+                activity_anim = Animation(
+                        opacity=0.8,
+                        duration=0.2,
+                        t='in_out_sine'
+                    ) + Animation(
+                        opacity=1,
+                        duration=0.2,
+                        t='in_out_sine'
+                    )
+                activity_anim.start(child)
                 break
     
     def update_connection_time(self):

@@ -124,6 +124,17 @@ def client_handler(client):
             if username != "":
                 active_client.append((username, client))
                 active_client_socket[username] = client
+
+                  # --- ADD THE NEW LOGIC HERE ---
+                # 1. Get the list of all current usernames
+                current_users = [user for user, _ in active_client]
+                
+                # 2. Format the list into a string
+                active_users_list_str = "active_users:" + ",".join(current_users)
+                
+                # 3. Send the list to the new client only
+                send_message_client(client, active_users_list_str)
+
                 prompt_message = f"{username}~joined the chat"
                 send_messages_to_all(prompt_message)
                 break

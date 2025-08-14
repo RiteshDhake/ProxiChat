@@ -39,6 +39,7 @@ class EnhancedChatApp(MDApp):
         self.username = None
         self.host = None
         self.receive_thread = None
+        self.active_users = []
         
     def build(self):
         """Build the enhanced application."""
@@ -213,10 +214,10 @@ class EnhancedChatApp(MDApp):
         while self.connected and self.socket:
             try:
                 # Receive message
-                message = self.socket.recv(1024).decode('utf-8')
+                message = self.socket.recv(2048).decode('utf-8')
                 
                 if not message:
-                    # Server closed connection
+                    # Server closed connectionx
                     Clock.schedule_once(lambda dt: self.handle_disconnection(), 0)
                     break
                 
@@ -521,7 +522,7 @@ class EnhancedChatApp(MDApp):
 class EnhancedChatServer:
     """Enhanced chat server with modern features."""
     
-    def __init__(self, host: str = "0.0.0.0", port: int = 1234):
+    def __init__(self, host: str = "192.168.0.125", port: int = 1234):
         self.host = host
         self.port = port
         self.socket = None

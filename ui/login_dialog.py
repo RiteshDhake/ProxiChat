@@ -20,7 +20,7 @@ from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Line
 from typing import Callable, Optional
 from kivy.uix.image import Image
-
+from kivy.properties import ListProperty
 
 
 class EnhancedLoginDialog(MDFloatLayout):
@@ -31,7 +31,7 @@ class EnhancedLoginDialog(MDFloatLayout):
         self.connect_callback = connect_callback
         self.setup_dialog()
         self.animate_entrance()
-        self.opacity =0
+        self.opacity = 0
     
     def setup_dialog(self):
         """Setup enhanced login dialog with modern styling."""
@@ -44,12 +44,12 @@ class EnhancedLoginDialog(MDFloatLayout):
         
         self.bind(pos=self.update_bg, size=self.update_bg)
         
-        # Main login card with glassmorphism effect
+        # Main login card with gradient effect
         self.login_card = self.create_enhanced_login_card()
         self.add_widget(self.login_card)
     
-    def create_enhanced_login_card(self) -> MDCard:
-        """Create modern login card with glassmorphism styling."""
+    def create_enhanced_login_card(self) -> 'MDCard':
+        """Create modern login card with gradient styling."""
         login_card = MDCard(
             size_hint=(None, None),
             size=(dp(420), dp(480)),
@@ -63,18 +63,6 @@ class EnhancedLoginDialog(MDFloatLayout):
             theme_bg_color="Custom",
             md_bg_color=[0.1, 0.1, 0.15, 0.95]  # Semi-transparent dark
         )
-        
-        # Add subtle border effect
-        # with login_card.canvas.after:
-        #     Color(0.3, 0.3, 0.4, 0.3)
-        #     login_card.border_line = Line(
-        #         rounded_rectangle=[
-        #             login_card.x, login_card.y, 
-        #             login_card.width, login_card.height, 
-        #             dp(20)
-        #         ],
-        #         width=1
-        #     )
         
         login_card.bind(pos=self.update_card_border, size=self.update_card_border)
         
@@ -93,50 +81,54 @@ class EnhancedLoginDialog(MDFloatLayout):
         return login_card
     
     def create_title_section(self) -> MDBoxLayout:
-        """Create animated title section."""
+        """Create animated title section with AnimatedLabel."""
         title_layout = MDBoxLayout(
             orientation="vertical",
             size_hint_y=None,
-            height=dp(100),
-            spacing=dp(8)
+            height=dp(140),  # Increased height for animated content
+            spacing=dp(12)
         )
         
-        # App logo/icon
-        logo_label = Image(
-            source="/Users/riteshdhake/Documents/Chatting_app/chatting_code/logo.png",
-                size_hint=(None, None),
-                size=(dp(45), dp(45)),
-                allow_stretch=True,
-                keep_ratio=True,
-                pos_hint={"center_x": 0.5, "center_y": 0.5}
+        # App logo/icon with pulsing effect
+        self.logo_icon = PulsingIcon(
+            text="ProxiChat",
+            font_size=sp(40),
+            halign="center",
+            theme_text_color="Custom",
+            text_color=[0.2, 0.6, 1.0, 1],
+            size_hint_y=None,
+            height=dp(50)
         )
         
-        # Main title
-        title_label = MDLabel(
-            text="Join Chat Server",
+        # Main title with typewriter animation
+        self.title_label = AnimatedLabel(
+            target_text="Join Chat Server",
             theme_text_color="Custom",
             text_color=[1, 1, 1, 1],
-            font_size=sp(24),
+            font_size=sp(26),
             bold=True,
             halign="center",
             size_hint_y=None,
-            height=dp(32)
+            height=dp(36)
         )
         
-        # Subtitle
-        subtitle_label = MDLabel(
-            text="Connect with friends and colleagues",
+        # Subtitle with delayed animation
+        self.subtitle_label = AnimatedLabel(
+            target_text="Connect with friends and colleagues",
             theme_text_color="Custom",
             text_color=[0.7, 0.7, 0.7, 1],
-            font_size=sp(14),
+            font_size=sp(15),
             halign="center",
             size_hint_y=None,
-            height=dp(20)
+            height=dp(22)
         )
         
-        title_layout.add_widget(logo_label)
-        title_layout.add_widget(title_label)
-        title_layout.add_widget(subtitle_label)
+        # Delay subtitle animation
+        Clock.schedule_once(lambda dt: self.subtitle_label.start_typewriter(), 1.0)
+        
+        title_layout.add_widget(self.logo_icon)
+        title_layout.add_widget(self.title_label)
+        title_layout.add_widget(self.subtitle_label)
         
         return title_layout
     
@@ -208,9 +200,9 @@ class EnhancedLoginDialog(MDFloatLayout):
         """Create enhanced button section."""
         button_layout = MDBoxLayout(
             orientation="vertical",
-            spacing=dp(16),
+            spacing=dp(40),
             size_hint_y=None,
-            height=dp(80)
+            height=dp(100)  # Increased for loading state
         )
         
         # Enhanced connect button
@@ -230,14 +222,16 @@ class EnhancedLoginDialog(MDFloatLayout):
             style="filled",
             theme_bg_color="Custom",
             md_bg_color=[0.2, 0.6, 1.0, 1],
+            pos_hint={"center_x": 0.5, "center_y": 0.5},
             size_hint_y=None,
+            # size_hint_x=None,
             height=dp(50),
             on_release=self.on_connect_pressed
         )
         
-        # Loading indicator (hidden initially)
-        self.loading_label = MDLabel(
-            text="Connecting...",
+        # Loading indicator with animated text (no emojis)
+        self.loading_label = AnimatedLabel(
+            target_text="Establishing connection...",
             halign="center",
             theme_text_color="Custom",
             text_color=[0.2, 0.6, 1.0, 1],
@@ -247,14 +241,14 @@ class EnhancedLoginDialog(MDFloatLayout):
             opacity=0
         )
         
+        
         button_layout.add_widget(self.connect_button)
         button_layout.add_widget(self.loading_label)
         
         return button_layout
     
     def animate_entrance(self):
-        """FIXED: Animate dialog entrance with modern effects."""
-        # Fix: Don't animate canvas directly
+        """Animate dialog entrance with modern effects."""
         self.opacity = 0  # Start transparent
         
         # Simple fade-in animation for the entire dialog
@@ -274,7 +268,6 @@ class EnhancedLoginDialog(MDFloatLayout):
                 t='out_back'
             )
             card_anim.start(self.login_card)
-
     
     def update_bg(self, *args):
         """Update background rectangle."""
@@ -301,47 +294,41 @@ class EnhancedLoginDialog(MDFloatLayout):
             # Delay to show loading state
             Clock.schedule_once(
                 lambda dt: self.connect_callback(username, host), 
-                0.5
+                0.8  # Longer delay to show the animation
             )
     
     def show_connecting_state(self):
-        """Show connecting animation and state."""
+        """Show connecting animation and state without emojis."""
         # Disable button and show loading
         self.connect_button.disabled = True
         self.connect_button.md_bg_color = [0.3, 0.3, 0.35, 1]
         
+        # Update button text
+        button_text = self.connect_button.children[0]  # MDButtonText
+        button_text.text = "Connecting..."
+        
         # Show loading indicator
-        self.loading_label.height = dp(30)
+        self.loading_label.height = dp(0)
         load_anim = Animation(opacity=1, duration=0.3)
         load_anim.start(self.loading_label)
         
-        # Rotate loading emoji
-        self.animate_loading()
-    
-    def animate_loading(self):
-        """Animate loading indicator."""
-        def rotate_loading(dt):
-            if self.loading_label.opacity > 0:
-                # Simple text rotation effect
-                loading_chars = ["🔄", "⏳", "🔄", "⏳"]
-                current_text = self.loading_label.text
-                if "🔄" in current_text:
-                    self.loading_label.text = "⏳ Connecting..."
-                else:
-                    self.loading_label.text = "🔄 Connecting..."
-                
-                Clock.schedule_once(rotate_loading, 0.5)
         
-        Clock.schedule_once(rotate_loading, 0.5)
+    
+
     
     def hide_connecting_state(self):
         """Hide connecting state and restore button."""
         self.connect_button.disabled = False
         self.connect_button.md_bg_color = [0.2, 0.6, 1.0, 1]
         
+        # Restore button text
+        button_text = self.connect_button.children[0]
+        button_text.text = "Connect to Server"
+        
         # Hide loading indicator
         hide_anim = Animation(opacity=0, height=dp(0), duration=0.3)
         hide_anim.start(self.loading_label)
+        
     
     def get_username(self) -> str:
         """Get entered username."""
@@ -443,13 +430,6 @@ class EnhancedLoginDialog(MDFloatLayout):
             duration=0.3
         )
         glow_anim.start(self.username_input)
-    
-    def animate_entrance(self):
-        self.opacity = 0
-    
-    # Animate to semi-transparent background effect
-        anim1 = Animation(opacity=0.9, duration=0.3)
-        Clock.schedule_once(lambda dt: anim1.start(self), 0.1)
 
 
 class LoginDialogManager:
@@ -462,12 +442,10 @@ class LoginDialogManager:
     
     def show_login(self, default_username: str = "", default_host: str = "192.168.0.125"):
         """Show enhanced login dialog."""
-        # FIXED: Proper parent management to prevent widget parent error
+        # Proper parent management to prevent widget parent error
         if self.dialog is not None:
-            # If dialog exists and has a parent, remove it first
             if self.dialog.parent:
                 self.dialog.parent.remove_widget(self.dialog)
-            # Clear the reference to create a fresh dialog
             self.dialog = None
         
         # Create new dialog instance
@@ -478,9 +456,7 @@ class LoginDialogManager:
         self.parent_screen.add_widget(self.dialog)
         
         # Focus username input after a short delay
-        Clock.schedule_once(lambda dt: self.dialog.focus_username_input(), 0.5)
-
-    # Also update the hide_login method to properly clear the dialog reference:
+        Clock.schedule_once(lambda dt: self.dialog.focus_username_input(), 0.8)
 
     def hide_login(self):
         """Hide login dialog with exit animation."""
@@ -491,10 +467,10 @@ class LoginDialogManager:
             # Background fade out animation
             bg_anim = Animation(a=0, duration=0.3)
             
-            # Card exit animation - using opacity and position instead of scale
+            # Card exit animation - using opacity and position
             exit_anim = Animation(
                 opacity=0,
-                y=self.dialog.login_card.y - dp(30),  # Slide down slightly
+                y=self.dialog.login_card.y - dp(30),
                 duration=0.3,
                 t='in_cubic'
             )
@@ -502,7 +478,6 @@ class LoginDialogManager:
             def remove_dialog(*args):
                 if self.dialog and self.dialog.parent:
                     self.parent_screen.remove_widget(self.dialog)
-                    # Clear dialog reference after removal
                     self.dialog = None
             
             # Bind completion callback and start animations
@@ -528,59 +503,24 @@ class LoginDialogManager:
         else:
             # Reset connecting state on failure
             self.dialog.hide_connecting_state()
-            # Error shake animation - ensure we have valid position
+            # Error shake animation
             if hasattr(self.dialog.login_card, 'pos') and self.dialog.login_card.pos:
                 original_pos = self.dialog.login_card.pos
                 shake = Animation(x=original_pos[0] + dp(15), duration=0.1)
                 shake += Animation(x=original_pos[0] - dp(15), duration=0.1)
                 shake += Animation(x=original_pos[0], duration=0.1)
                 shake.start(self.dialog.login_card)
-        
-        def cleanup(self):
-            """Enhanced cleanup with animations."""
-            if self.dialog:
-                self.hide_login()
-                Clock.schedule_once(lambda dt: setattr(self, 'dialog', None), 0.5)
+    
+    def cleanup(self):
+        """Enhanced cleanup with animations."""
+        if self.dialog:
+            self.hide_login()
+            Clock.schedule_once(lambda dt: setattr(self, 'dialog', None), 0.5)
 
 
 # Additional utility classes for enhanced styling
 
-class GradientCard(MDCard):
-    """Card with gradient background effect."""
-    
-    def __init__(self, gradient_colors: list = None, **kwargs):
-        super().__init__(**kwargs)
-        self.gradient_colors = gradient_colors or [
-            [0.1, 0.1, 0.15, 1],
-            [0.05, 0.05, 0.08, 1]
-        ]
-        self.setup_gradient()
-    
-    def setup_gradient(self):
-        """Setup gradient background."""
-        with self.canvas.before:
-            # Simple gradient simulation with overlapping colors
-            Color(*self.gradient_colors[0])
-            self.bg_rect1 = RoundedRectangle(
-                pos=self.pos, 
-                size=self.size, 
-                radius=self.radius
-            )
-            Color(*self.gradient_colors[1])
-            self.bg_rect2 = RoundedRectangle(
-                pos=(self.x, self.y + self.height * 0.5), 
-                size=(self.width, self.height * 0.5),
-                radius=[0, 0] + self.radius[2:]
-            )
-        
-        self.bind(pos=self.update_gradient, size=self.update_gradient)
-    
-    def update_gradient(self, *args):
-        """Update gradient rectangles."""
-        self.bg_rect1.pos = self.pos
-        self.bg_rect1.size = self.size
-        self.bg_rect2.pos = (self.x, self.y + self.height * 0.5)
-        self.bg_rect2.size = (self.width, self.height * 0.5)
+
 
 
 class AnimatedLabel(MDLabel):
@@ -603,8 +543,10 @@ class AnimatedLabel(MDLabel):
                 self.text = self.current_text  # Remove cursor
         
         Clock.schedule_once(add_character, 0.1)
+
+
 class PulsingIcon(MDLabel):
-    """Icon with pulsing animation effect."""
+    """Icon with pulsing animation effect (no scale animations)."""
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -612,9 +554,9 @@ class PulsingIcon(MDLabel):
         self.start_pulsing()
     
     def start_pulsing(self):
-        """Start pulsing animation."""
-        pulse_anim = Animation(opacity=0.5, duration=1.0, t='in_out_sine')
-        pulse_anim += Animation(opacity=1.0, duration=1.0, t='in_out_sine')
+        """Start pulsing animation using opacity only."""
+        pulse_anim = Animation(opacity=0.4, duration=1.2, t='in_out_sine')
+        pulse_anim += Animation(opacity=1.0, duration=1.2, t='in_out_sine')
         pulse_anim.repeat = True
         
         # Store reference to animation for potential cleanup
